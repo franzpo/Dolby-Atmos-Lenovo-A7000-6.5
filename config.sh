@@ -27,7 +27,7 @@
 
 # This will be the folder name under /magisk
 # This should also be the same as the id in your module.prop to prevent confusion
-MODID=template
+MODID=dax
 
 # Set to true if you need to enable Magic Mount
 # Most mods would like it to be enabled
@@ -49,9 +49,15 @@ LATESTARTSERVICE=false
 # Set what you want to show when installing your mod
 
 print_modname() {
-  ui_print "*******************************"
-  ui_print "     Magisk Module Template    "
-  ui_print "*******************************"
+  ui_print " "
+  ui_print "      ****************************************"
+  ui_print "      *     Lenovo A7000-6.5 Dolby Atmos     *"
+  ui_print "      ****************************************"
+  ui_print "      *           Universal - Mod            *"
+  ui_print "      *             Version 2.0              *"
+  ui_print "      *              by ahrion               *"
+  ui_print "      ****************************************"
+  ui_print " "
 }
 
 ##########################################################################################
@@ -62,20 +68,10 @@ print_modname() {
 # By default Magisk will merge your files with the original system
 # Directories listed here however, will be directly mounted to the correspond directory in the system
 
-# You don't need to remove the example below, these values will be overwritten by your own list
-# This is an example
-REPLACE="
-/system/app/Youtube
-/system/priv-app/SystemUI
-/system/priv-app/Settings
-/system/framework
-"
-
 # Construct your own list here, it will overwrite the example
 # !DO NOT! remove this if you don't need to replace anything, leave it empty as it is now
 REPLACE="
 "
-
 ##########################################################################################
 # Permissions
 ##########################################################################################
