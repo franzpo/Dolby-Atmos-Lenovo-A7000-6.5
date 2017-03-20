@@ -26,8 +26,9 @@ setprop ro.lenovo.soundeffect dolby
 setprop ro.mtk_dolby_dap_support 1
 
 if [ -e /data/local/dax_run.log ]; then
-    rm /data/local/dax_run.log
+  rm /data/local/dax_run.log
 fi
+
 echo "Dolby Atmos script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
 
 # KEEP DOLBY ATMOS IN MEMORY
@@ -35,7 +36,6 @@ setprop sys.keep_app_2 com.atmos
 PPID=$(pidof com.atmos)
 echo "-17" > /proc/$PPID/oom_adj
 renice -18 $PPID
-
 
 # SCRIPT BY ahrion@XDA
 # DO NOT STEAL

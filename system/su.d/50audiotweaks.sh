@@ -2,6 +2,8 @@
 
 LOG_FILE=/data/local/audiotweaks_run.log;
 /system/xbin/supolicy --live "allow mediaserver mediaserver_tmpfs:file { read write execute };"
+/system/xbin/supolicy --live "allow audioserver audioserver_tmpfs:file { read write execute };"
+
 
 # LOW POWER AUDIO TWEAKS
 setprop lpa.decode false
@@ -17,8 +19,9 @@ setprop ro.audio.samplerate 48000
 setprop ro.audio.pcm.samplerate 48000
 
 if [ -e /data/local/audiotweaks_run.log ]; then
-    rm /data/local/audiotweaks_run.log
+  rm /data/local/audiotweaks_run.log
 fi
+
 echo "Universal audio tweaks script has run successfully $(date +"%m-%d-%Y %H:%M:%S")" | tee -a $LOG_FILE;
 
 

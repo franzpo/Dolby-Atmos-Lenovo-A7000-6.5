@@ -1,8 +1,9 @@
 id=AxA7000-6.5
-name=Dolby Atmos (Lenovo A7000 [6.5])
+name=Dolby Atmos® (Lenovo A7000 [6.5])
 version=v2.0
 versionCode=1
 author=ahrion
-description=Dolby Atmos port from Lenovo A7000 [6.5].
+description=Dolby Atmos® transports you into the song with moving audio that flows all around you with breathtaking realism
 support=https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342
 donate=https://github.com/therealahrion/Collective-Dolby-Atmos-Ports
+template=2
