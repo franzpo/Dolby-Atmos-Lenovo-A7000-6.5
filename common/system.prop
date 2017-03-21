@@ -1,35 +1,3 @@
 # This file will be read by resetprop
 # Example: Change dpi
 # ro.sf.lcd_density=320
-
-# VENDOR SPECIFIC DOLBY ATMOS TWEAKS
-dmid=3067269873
-audio.ds1.metainfo.key=273
-audio.dolby.ds2.enabled=true
-audio.dolby.ds2.hardbypass=true
-dolby.audio.sink.info=speaker
-dolby.ds.dialogenhancer.state=on
-dolby.ds.graphiceq.state=on
-dolby.ds.intelligenteq.preset=ieq_on
-dolby.ds.intelligenteq.state=on
-dolby.ds.profile.name=Music
-dolby.ds.state=on
-dolby.ds.virt.bluetooth=on
-dolby.ds.virt.hdmi=on
-dolby.ds.virt.headphone_port=on
-dolby.ds.virt.internal_speaker=on
-dolby.ds.virt.miracast=on
-dolby.ds.virt.usb=on
-dolby.ds.volumeleveler.state=off
-dolby.monospeaker=false
-ro.lenovo.soundeffect=dolby
-ro.mtk_dolby_dap_support=1
-
-# KEEP DOLBY ATMOS IN MEMORY
-sys.keep_app_2=com.atmos
-PPID=$(pidof com.atmos)
-echo "-17" > /proc/$PPID/oom_adj
-renice -18 $PPID
-
-# SCRIPT BY ahrion@XDA
-# DO NOT STEAL
