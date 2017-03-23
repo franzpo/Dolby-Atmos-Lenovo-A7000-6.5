@@ -38,7 +38,7 @@ AUTOMOUNT=true
 PROPFILE=false
 
 # Set to true if you need post-fs-data script
-POSTFSDATA=false
+POSTFSDATA=true
 
 # Set to true if you need late_start service script
 LATESTARTSERVICE=false
@@ -52,7 +52,7 @@ LATESTARTSERVICE=false
 print_modname() {
   ui_print " "
   ui_print "      ****************************************"
-  ui_print "      *    Lenovo A7000 [6.5] Dolby Atmos®   *"
+  ui_print "      *   Lenovo A7000 [6.5] Dolby Atmos®    *"
   ui_print "      ****************************************"
   ui_print "      *           Universal - Mod            *"
   ui_print "      *             Version 2.0              *"
