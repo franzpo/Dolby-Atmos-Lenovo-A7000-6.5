@@ -234,8 +234,8 @@ system_install() {
 ##########################################################################################
 
 DOLBY="a7000-6.5"
-REVISION="1"
-VERSION="2.0"
+REVISION="2"
+VERSION="2.1"
 
 APP1="Ax"
 APP2="AxUI"
@@ -523,8 +523,7 @@ magisk_audmodlib() {
       mkdir -p $AUDMODLIBPATH${CFG%/*}
 	fi
   done
-  
-  cp -af $INSTALLER/common/audmodlibsystem.prop $AUDMODLIBPATH/system.prop
+
   cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBPATH/module.prop
   cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 

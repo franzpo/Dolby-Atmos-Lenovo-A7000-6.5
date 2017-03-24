@@ -13,5 +13,8 @@ This module enables Lenovo A7000 [6.5] Dolby Atmos port and is the most compatib
 * worstenbrood @ XDA Developers
 
 ## Change Log
+2.1
+    - AudModLib v1.1 hotfix for bootloops issues on some devices
+
 2.0
     - Initial Magisk release
