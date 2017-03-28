@@ -55,7 +55,7 @@ print_modname() {
   ui_print "      *   Lenovo A7000 [6.5] Dolby Atmos®    *"
   ui_print "      ****************************************"
   ui_print "      *           Universal - Mod            *"
-  ui_print "      *             Version 2.1              *"
+  ui_print "      *             Version 2.2              *"
   ui_print "      *              by ahrion               *"
   ui_print "      ****************************************"
   ui_print " "

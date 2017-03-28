@@ -23,7 +23,6 @@ safe_mount /system
 
 SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
 if [ "$SLOT" ]; then
-  safe_mount /system/system
   SYSTEM=/system/system
 else
   SYSTEM=/system
@@ -33,11 +32,10 @@ if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
   safe_mount /vendor
   VENDOR=/vendor
 elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-  safe_mount $SYSTEM/vendor
   VENDOR=$SYSTEM/vendor
 fi
 
-suimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
+supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
 
 if [ -d $SYSTEM/priv-app ]; then
   APPDIR=priv-app
@@ -73,7 +71,7 @@ is_mounted() {
   return $?
 }
 
-sys_is_mounted() {
+supersu_is_mounted() {
   case `mount` in
     *" $1 "*) echo 1;;
     *) echo 0;;
@@ -234,8 +232,8 @@ system_install() {
 ##########################################################################################
 
 DOLBY="a7000-6.5"
-REVISION="2"
-VERSION="2.1"
+REVISION="3"
+VERSION="2.2"
 
 APP1="Ax"
 APP2="AxUI"
@@ -427,8 +425,8 @@ unified_mod_copy() {
 
   if [ "$MAGISK" == false ]; then
     #INSTALL SCRIPTS
-    if [ "$suimg" ] || [ -d /su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ] || [ -d $SYSTEM/etc/init.d ]; then
-      if [ "$suimg" ] || [ -d /su ]; then
+    if [ "$supersuimg" ] || [ -d /su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ] || [ -d $SYSTEM/etc/init.d ]; then
+      if [ "$supersuimg" ] || [ -d /su ]; then
         ui_print "   Installing scripts for systemless SuperSU..."
         EXT=".sh"
         EXTRDIR=/su/su.d
@@ -472,6 +470,9 @@ magisk_audmodlib() {
   ### CREATE AUDIO MODIFICATION LIBRARY ###
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
+
+  mkdir -p $MOUNTPATH/.core/post-fs-data.d
+  cp -af $INSTALLER/common/$AUDMODLIBID.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh  
 
   mkdir -p $MOUNTPATH/.core/post-fs-data.d
   cp -af $INSTALLER/common/$MODID.sh $MOUNTPATH/.core/post-fs-data.d/$MODID.sh
@@ -680,16 +681,16 @@ mount /data 2>/dev/null
 mount -o rw,remount /data 2>/dev/null
 mount -o rw,remount /data /data 2>/dev/null
 
-if [ "$suimg" ]; then
-  if [ "$(sys_is_mounted /su)" == 0 ]; then
+if [ "$supersuimg" ]; then
+  if [ "$(supersu_is_mounted /su)" == 0 ]; then
     ui_print "   Mounting /su...";
     test ! -e /su && mkdir /su;
-    mount -t ext4 -o rw,noatime $suimg /su 2>/dev/null
+    mount -t ext4 -o rw,noatime $supersuimg /su 2>/dev/null
     for i in 0 1 2 3 4 5 6 7; do
-      test "$(sys_is_mounted /su)" == 1 && break;
+      test "$(supersu_is_mounted /su)" == 1 && break;
       loop=/dev/block/loop$i;
 	  mknod $loop b 7 $i;
-	  losetup $loop $suimg;
+	  losetup $loop $supersuimg;
 	  mount -t ext4 -o loop $loop /su; 2>/dev/null
     done;
   fi;
@@ -748,10 +749,6 @@ if is_mounted /data; then
     # Patch files
     unified_mod_patch
     #### COMPLETING INSTALL ####
-    umount /data
-    umount /su
-    umount $SYSTEM
-    umount $VENDOR
     ui_print " "
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "
@@ -866,6 +863,9 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
 fi
 
 if ! $BOOTMODE; then
+  if [ "$supersuimg" ] || [ -d /su ]; then
+    umount /su
+  fi
   umount $SYSTEM
   umount $VENDOR 2>/dev/null
 fi

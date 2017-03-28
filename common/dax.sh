@@ -12,17 +12,6 @@ rm -rf /cache/magisk/audmodlib
 if [ ! -d /magisk/$MODID ]; then
   AUDMODLIBPATH=/magisk/audmodlib
 
-  safe_mount() {
-    IS_MOUNTED=$(cat /proc/mounts | grep "$1")
-    if [ "$IS_MOUNTED" ]; then
-      mount -o rw,remount $1
-    else
-      mount $1
-    fi
-  }
-
-  safe_mount /system
-
   SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
   if [ "$SLOT" ]; then
     SYSTEM=/system/system
@@ -31,7 +20,6 @@ if [ ! -d /magisk/$MODID ]; then
   fi
 
   if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
-    safe_mount /vendor
     VENDOR=/vendor
   elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
     VENDOR=$SYSTEM/vendor

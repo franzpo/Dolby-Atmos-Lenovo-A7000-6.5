@@ -1,7 +1,7 @@
 revision() {
-revision="2"
+revision="3"
 }
 
 version() {
-version="2.1"
+version="2.2"
 }
