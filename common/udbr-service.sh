@@ -3,7 +3,7 @@
 # More info in the main Magisk thread
 
 #### v INSERT YOUR CONFIG.SH MODID v ####
-MODID=dax
+MODID=udbr
 #### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
 ########## v DO NOT REMOVE v ##########
@@ -48,19 +48,17 @@ if [ ! -d /magisk/$MODID ]; then
   V_MIX_PATH=$VENDOR/etc/mixer_paths.xml
   ########## ^ DO NOT REMOVE ^ ##########
 
-  #### v INSERT YOUR REMOVE PATCH OR RESTORE v #####
-  # REMOVE LIBRARIES & EFFECTS
-  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
-    if [ -f $CFG ]; then
-      # REMOVE EFFECTS
-      sed -i 'H;1h;$!d;x; s/[[:blank:]]*dax {[^{}]*\({[^}]*}[^{}]*\)*}[[:blank:]]*\n//g' $AUDMODLIBPATH$CFG
-      # REMOVE LIBRARIES
-      sed -i '/dax {/,/}/d' $AUDMODLIBPATH$CFG
-      sed -i '/dax_sw {/,/}/d' $AUDMODLIBPATH$CFG
-      sed -i '/dax_hw {/,/}/d' $AUDMODLIBPATH$CFG
-    fi
-  done
+  #### v INSERT YOUR REMOVE PATCH OR RESTORE v ####
+  # RESTORE BACKED UP CONFIGS
+  if [ -f $A2DP_AUD_POL.bak ] || [ -f $AUD_POL.bak ] || [ -f $AUD_POL_CONF.bak ] || [ -f $AUD_POL_VOL.bak ] || [ -f $SUB_AUD_POL.bak ] || [ -f $USB_AUD_POL.bak ] || [ -f $V_AUD_OUT_POL.bak ] || [ -f $V_AUD_POL.bak ]; then
+    for RESTORE in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
+      if [ -f $RESTORE.bak ]; then
+        cp -f $AUDMODLIBPATH$RESTORE.bak $AUDMODLIBPATH$RESTORE
+      fi
+    done
+  fi
   #### ^ INSERT YOUR REMOVE PATCH OR RESTORE ^ ####
 
   rm -f /magisk/.core/service.d/$MODID.sh
+  reboot
 fi

@@ -1,12 +1,12 @@
 #!/sbin/sh
 # 
-# /system/addon.d/dax.sh
+# /system/addon.d/udbr.sh
 #
 
 . /tmp/backuptool.functions
 
 #### v INSERT YOUR CONFIG.SH MODID v ####
-MODID=dax
+MODID=udbr
 AUDMODLIBID=audmodlib
 #### ^ INSERT YOUR CONFIG.SH MODID ^ ####
 
@@ -54,9 +54,6 @@ fi
 ########## ^ DO NOT REMOVE ^ ##########
 
 #### v INSERT MORE APPS IF MORE EXIST v ####
-APP1="Ax"
-APP2="AxUI"
-
 if [ "$API" -ge "21" ]; then
   APPTXT="   Installing apps for Lollipop and above..."
   APP1PATH=$APPDIR/$APP1
@@ -71,12 +68,7 @@ fi
 list_files() {
 cat <<EOF
 addon.d/$AUDMODLIBID.sh
-$APP1PATH/$APP1.apk
-$APP2PATH/$APP2.apk
-etc/dolby/dax-default.xml
 etc/init.d/$AUDMODLIBID
-lib/libdlbdapstorage.so
-lib/soundfx/libswdax.so
 su.d/$AUDMODLIBID.sh
 su/su.d/$AUDMODLIBID.sh
 EOF
@@ -102,35 +94,34 @@ case "$1" in
     # Stub
   ;;
   pre-restore)
-	# Stub
+    # Stub
   ;;
   post-restore)
+    #### v INSERT YOUR BACKUP FUNCTIONS v ####
+    # BACKUP CONFIGS
+    for BACKUP in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
+      if [ -f $BACKUP ]; then
+        cp -f $BACKUP $BACKUP.bak
+      fi
+    done
+	#### ^ INSERT YOUR BACKUP FUNCTIONS ^ ####
+
     #### v INSERT YOUR FILE PATCHES v ####
-    # REMOVE LIBRARIES & EFFECTS
-    for CFG in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_V_FILE $HTC_CONFIG_FILE $V_CONFIG_FILE; do
-      if [ -f $CFG ]; then
-        # REMOVE EFFECTS
-        sed -i 'H;1h;$!d;x; s/[[:blank:]]*dax {[^{}]*\({[^}]*}[^{}]*\)*}[[:blank:]]*\n//g' $CFG
-        # REMOVE LIBRARIES
-        sed -i '/dax {/,/}/d' $CFG
-        sed -i '/dax_sw {/,/}/d' $CFG
-        sed -i '/dax_hw {/,/}/d' $CFG
-      fi
-    done
-
-    # ADD LIBRARIES & EFFECTS
-    for CFG in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_V_FILE $HTC_CONFIG_FILE $V_CONFIG_FILE; do
-      if [ -f $CFG ]; then
-        # ADD EFFECTS
-        sed -i 's/^effects {/effects {\n  dax {\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  }/g' $CFG
-        # ADD LIBRARIES
-        sed -i 's/^libraries {/libraries {\n  dax {\n    path \/system\/lib\/soundfx\/libswdax.so\n  }/g' $CFG
-      fi
-    done
-
-    # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
-    if [ -f $V_CONFIG_FILE ]; then
-      cp -af $CONFIG_FILE $V_CONFIG_FILE
+    # REMOVE DEEP_BUFFER LINES
+    if [ -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
+      # REMOVE DEEP_BUFFER
+      sed -i '/Speaker/{n;s/deep_buffer,//;}' $AUD_POL_CONF
+    elif [ ! -f $V_AUD_OUT_POL ] && [ -f $AUD_POL_CONF ]; then
+      # REMOVE DEEP_BUFFER
+      sed -i 's/deep_buffer,//g' $AUD_POL_CONF
+      sed -i 's/,deep_buffer//g' $AUD_POL_CONF
+    else
+      for CFG in $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL; do
+        if [ -f $CFG ]; then
+          # REMOVE DEEP_BUFFER
+          sed -i '/deep_buffer {/,/}/d' $CFG
+        fi
+      done
     fi
     #### ^ INSERT YOUR FILE PATCHES ^ ####
   ;;
