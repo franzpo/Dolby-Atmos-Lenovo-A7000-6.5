@@ -1,5 +1,5 @@
 # Lenovo A7000 [6.5] Dolby Atmos Classic
-This module enables Lenovo A7000 [6.5] Dolby Atmos port and is the most compatible of all the ports. [More details in support thread](https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342).ggg
+This module enables Lenovo A7000 [6.5] Dolby Atmos port and is the most compatible of all the ports. [More details in support thread](https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342).
 
 ### Dependencies
 * [Audio Modification Library](https://forum.xda-developers.com/apps/magisk/module-audio-modification-library-t3579612) @ XDA Developers
