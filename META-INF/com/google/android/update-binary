@@ -10,38 +10,19 @@ umask 022
 # Functions
 ##########################################################################################
 
-safe_mount() {
-  IS_MOUNT=$(cat /proc/mounts | grep "$1")
-  if [ "$IS_MOUNT" ]; then
-    mount -o rw,remount $1
-  else
-    mount $1
-  fi
-}
-
-safe_mount /system
-
-SLOT=$(getprop ro.boot.slot_suffix 2>/tmp/null)
-if [ "$SLOT" ]; then
+# DETERMINE IF PIXEL (A/B OTA) DEVICE
+ABDeviceCheck=$(cat /proc/cmdline | grep slot_suffix | wc -l)
+if [ "$ABDeviceCheck" -gt 0 ]; then
+  isABDevice=true
   SYSTEM=/system/system
-else
-  SYSTEM=/system
-fi
-
-if [ ! -d "$SYSTEM/vendor" ] || [ -L "$SYSTEM/vendor" ]; then
-  safe_mount /vendor
   VENDOR=/vendor
-elif [ -d "$SYSTEM/vendor" ] || [ -L "/vendor" ]; then
-  VENDOR=$SYSTEM/vendor
+else
+  isABDevice=false
+  SYSTEM=/system
+  VENDOR=/system/vendor
 fi
 
 supersuimg=$(ls /cache/su.img /data/su.img 2>/dev/null);
-
-if [ -d $SYSTEM/priv-app ]; then
-  APPDIR=priv-app
-else
-  APPDIR=app
-fi
 
 ui_print() {
   if $BOOTMODE; then
@@ -176,36 +157,46 @@ ZIP=$3
 ### FILE LOCATIONS ###
 # AUDIO EFFECTS
 CONFIG_FILE=$SYSTEM/etc/audio_effects.conf
-VENDOR_CONFIG=$VENDOR/etc/audio_effects.conf
 HTC_CONFIG_FILE=$SYSTEM/etc/htc_audio_effects.conf
-OTHER_VENDOR_FILE=$SYSTEM/etc/audio_effects_vendor.conf
+OTHER_V_FILE=$SYSTEM/etc/audio_effects_vendor.conf
 OFFLOAD_CONFIG=$SYSTEM/etc/audio_effects_offload.conf
+V_CONFIG_FILE=$VENDOR/etc/audio_effects.conf
 # AUDIO POLICY
+A2DP_AUD_POL=$SYSTEM/etc/a2dp_audio_policy_configuration.xml
 AUD_POL=$SYSTEM/etc/audio_policy.conf
 AUD_POL_CONF=$SYSTEM/etc/audio_policy_configuration.xml
-AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
+AUD_POL_VOL=$SYSTEM/etc/audio_policy_volumes.xml
+SUB_AUD_POL=$SYSTEM/etc/r_submix_audio_policy_configuration.xml
+USB_AUD_POL=$SYSTEM/etc/usb_audio_policy_configuration.xml
+V_AUD_OUT_POL=$VENDOR/etc/audio_output_policy.conf
 V_AUD_POL=$VENDOR/etc/audio_policy.conf
+# MIXER PATHS
+MIX_PATH=$SYSTEM/etc/mixer_paths.xml
+MIX_PATH_TASH=$SYSTEM/etc/mixer_paths_tasha.xml
+STRIGG_MIX_PATH=$SYSTEM/sound_trigger_mixer_paths.xml
+STRIGG_MIX_PATH_9330=$SYSTEM/sound_trigger_mixer_paths_wcd9330.xml
+V_MIX_PATH=$VENDOR/etc/mixer_paths.xml
 
 magisk_install() {
   MAGISK=true
   MK_PRFX="mkdir -p"
   CP_PRFX="cp -af"
-  UNIFY="$MODPATH"
+  UNITY="$MODPATH"
   MK_SFFX=""
   CP_SFFX=""
-  PATCHINSTALL="$TMPAUDMODLIBDIR"
-  PATCH="/cache/magisk/audmodlib"
+  SOURCEDIR="$SOURCEDIR"
+  UNITYPATCH="/cache/magisk/audmodlib"
 }
 
 system_install() {
   MAGISK=false
   MK_PRFX="sys_mk_ch"
   CP_PRFX="sys_cp_ch"
-  UNIFY=""
+  UNITY=""
   MK_SFFX=" 0755"
   CP_SFFX=" 0644"
-  PATCHINSTALL=""
-  PATCH=""
+  SOURCEDIR=""
+  UNITYPATCH=""
 }
 
 ##########################################################################################
@@ -213,14 +204,14 @@ system_install() {
 # Instructions:
 # 
 # 1. This is a Unified installer for both Magisk and System install, so be sure to
-#    follow the template provided for "app_install_logic", "system_mod_wipe",
+#    follow the template provided for "app_install_logic", "unified_mod_wipe",
 #    & "unified_mod_<xxxx>"
 # 2. magisk_audmodlib and files with the audmodlib prefix as such need to remain
 #    untouched unless an update has occured, however use unified_mod_patch to remove
 #    and then add the lines corresponding to your mod
 # 3. If applicable, make "APP1", etc. to be the same name as your .apk/app folder
 #    in system/app/ (i.e. APP1=Ax, APP2=ViPER4Android, APP3=AM3DZirene and so on)
-# 4. common/$MODID.sh, system/addon.d/99$MODID.sh & system/su.d/50$MODID.sh app specific
+# 4. common/$MODID.sh, system/addon.d/$MODID.sh & system/su.d/$MODID.sh app specific
 #    scripts will be named the same as your MODID in config.sh (i.e. MODID=v4afx so
 #    common/$MODID.sh=v4afx.sh)
 # 5. Edit common/$MODID.sh to remove or restore the specific audio_effects or
@@ -232,8 +223,8 @@ system_install() {
 ##########################################################################################
 
 DOLBY="a7000-6.5"
-REVISION="3"
-VERSION="2.2"
+REVISION="5"
+VERSION="2.4"
 
 APP1="Ax"
 APP2="AxUI"
@@ -243,20 +234,47 @@ app_install_logic() {
   # Logic for correct application installation
   ########################################################################################
 
+  ########## v DO NOT REMOVE v ##########
+  if [ -d $SYSTEM/priv-app ]; then
+    APPDIR=priv-app
+  else
+    APPDIR=app
+  fi
+  ########## ^ DO NOT REMOVE ^ ##########
+
   #### v INSERT MORE APPS IF MORE EXIST v ####
   if [ "$API" -ge "21" ]; then
     APPTXT="   Installing apps for Lollipop and above..."
     APP1PATH=$APPDIR/$APP1
-	APP2PATH=$APPDIR/$APP2
+    APP2PATH=$APPDIR/$APP2
   else
     APPTXT="   Installing apps for Lollipop and below..."
     APP1PATH=$APPDIR
-	APP2PATH=$APPDIR
+    APP2PATH=$APPDIR
   fi
   #### ^ INSERT MORE APPS IF MORE EXIST ^ ####
 }
 
-system_mod_wipe() {
+script_install_logic() {
+  ########################################################################################
+  # Logic for correct system script installation
+  ########################################################################################
+
+  ########## v DO NOT REMOVE v ##########
+  # DETERMINE ROOT BOOT SCRIPT TYPE
+  EXT=".sh"
+  if [ "$supersuimg" ] || [ -d /su ]; then
+    SH=/su/su.d
+  elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
+    SH=$SYSTEM/su.d
+  elif [ -d $SYSTEM/etc/init.d ]; then
+    SH=$SYSTEM/etc/init.d
+    EXT=""
+  fi
+  ########## ^ DO NOT REMOVE ^ ##########
+}
+
+unified_mod_wipe() {
   ########################################################################################
   # Wipe before System install
   ########################################################################################
@@ -268,29 +286,29 @@ system_mod_wipe() {
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR FILE REMOVALS v ####
+  app_install_logic
+
   # REMOVE FILES
   ui_print "   Removing files..."
   rm -rf /data/app/com.atmos-1
   rm -rf /data/app/com.atmos-2
   rm -rf /data/app/com.atmos-3
-  rm -rf /data/data/com.atmos
   rm -rf /data/app/com.atmos.daxappUI-1
   rm -rf /data/app/com.atmos.daxappUI-2
   rm -rf /data/app/com.atmos.daxappUI-3
-  rm -rf /data/data/com.atmos.daxappUI
   rm -rf $SYSTEM/app/$APP1
   rm -rf $SYSTEM/app/$APP2
   rm -rf $SYSTEM/etc/dolby
   rm -rf $SYSTEM/priv-app/$APP1
   rm -rf $SYSTEM/priv-app/$APP2
-  rm -f $SYSTEM/addon.d/99$MODID.sh
+  rm -f $SYSTEM/addon.d/$MODID.sh
   rm -f $SYSTEM/app/$APP1.apk
   rm -f $SYSTEM/app/$APP2.apk
   rm -f $SYSTEM/app/$APP1/$APP1.apk
   rm -f $SYSTEM/app/$APP2/$APP2.apk
   rm -f $SYSTEM/etc/dolby/dax-default.xml
-  rm -f $SYSTEM/etc/init.d/50$MODID
-  rm -f $SYSTEM/etc/init.d/50audiotweaks
+  rm -f $SYSTEM/etc/init.d/$MODID
+  rm -f $SYSTEM/etc/init.d/$AUDMODLIBID
   rm -f $SYSTEM/lib/libdlbdapstorage.so
   rm -f $SYSTEM/lib/libhwdaphal.so
   rm -f $SYSTEM/lib/soundfx/libswdax.so
@@ -300,16 +318,16 @@ system_mod_wipe() {
   rm -f $SYSTEM/priv-app/$APP2.apk
   rm -f $SYSTEM/priv-app/$APP1/$APP1.apk
   rm -f $SYSTEM/priv-app/$APP1/$APP2.apk
-  rm -f /su/su.d/50$MODID.sh
-  rm -f /su/su.d/50audiotweaks.sh
-  rm -f $SYSTEM/su.d/50$MODID.sh
-  rm -f $SYSTEM/su.d/50audiotweaks.sh
+  rm -f /su/su.d/$MODID.sh
+  rm -f /su/su.d/$AUDMODLIBID.sh
+  rm -f $SYSTEM/su.d/$MODID.sh
+  rm -f $SYSTEM/su.d/$AUDMODLIBID.sh
   #### ^ INSERT YOUR FILE REMOVALS ^ ####
-  
+
   #### v INSERT YOUR REMOVE PATCH v ####
   # REMOVE LIBRARIES & EFFECTS
   ui_print "   Removing library & effect lines..."
-  for CFG in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_VENDOR_FILE $HTC_CONFIG_FILE $VENDOR_CONFIG; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
     if [ -f $CFG ]; then
       # REMOVE EFFECTS
       sed -i 'H;1h;$!d;x; s/[[:blank:]]*dax {[^{}]*\({[^}]*}[^{}]*\)*}[[:blank:]]*\n//g' $CFG
@@ -323,14 +341,14 @@ system_mod_wipe() {
 
   #### v INSERT YOUR RESTORE AND BACKUP FUNCTIONS v ####
   # REPLACE VENDOR FILE WITH PREVIOUS BACKUP
-  if [ -f $VENDOR_CONFIG ] && [ -f $VENDOR_CONFIG.bak ]; then
+  if [ -f $V_CONFIG_FILE ] && [ -f $V_CONFIG_FILE.bak ]; then
     # RESTORE BACKED UP CONFIGS
-    cp -af $VENDOR_CONFIG.bak $VENDOR_CONFIG
+    cp -af $V_CONFIG_FILE.bak $V_CONFIG_FILE
   fi
   
   # BACKUP CONFIGS
   ui_print "   Backing up existing audio_effects cfg files..."
-  for BACKUP in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_VENDOR_FILE $HTC_CONFIG_FILE $VENDOR_CONFIG; do
+  for BACKUP in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
     if [ -f $BACKUP ]; then
       cp -f $BACKUP $BACKUP.bak
     fi
@@ -358,25 +376,25 @@ unified_mod_directory() {
   ########## ^ DO NOT REMOVE ^ ##########
 
   #### v INSERT YOUR DIRECTORY MAKING v ####
-  app_install_logic
-  $MK_PRFX $UNIFY$SYSTEM/$APP1PATH$MK_SFFX
-  $MK_PRFX $UNIFY$SYSTEM/$APP2PATH$MK_SFFX
+  $MK_PRFX $UNITY$SYSTEM/$APP1PATH$MK_SFFX
+  $MK_PRFX $UNITY$SYSTEM/$APP2PATH$MK_SFFX
 
-  $MK_PRFX $UNIFY$SYSTEM/etc/dolby$MK_SFFX
-  $MK_PRFX $UNIFY$SYSTEM/lib/soundfx$MK_SFFX
+  $MK_PRFX $UNITY$SYSTEM/etc/dolby$MK_SFFX
+  $MK_PRFX $UNITY$SYSTEM/lib/soundfx$MK_SFFX
 
-  if [ -d $SYSTEM/lib64 ]; then
+  if [ -d "$IS64BIT" == true ]; then
     if [ "$DOLBY" == "axon7" ] || [ "$DOLBY" == lemax2 ] || [ "$DOLBY" == lepro3 ]; then
-      $MK_PRFX $UNIFY$SYSTEM/lib64$MK_SFFX
+      $MK_PRFX $UNITY$SYSTEM/lib64$MK_SFFX
     fi
   fi
 
   if [ "$MAGISK" == false ]; then
+    script_install_logic
+    sys_mk_ch $SH 0755
     if [ -d $SYSTEM/addon.d ]; then
       sys_mk_ch $SYSTEM/addon.d 0755
     fi
-
-    for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG; do
+    for CFG in $CONFIG_FILE $V_CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG; do
       if [ -f $CFG ]; then
         sys_mk_ch ${CFG%/*} 0755
       fi
@@ -399,63 +417,45 @@ unified_mod_copy() {
   #### v INSERT YOUR FILE INSTALL v ####
   # INSTALL APPS
   ui_print "$APPTXT"
-  $CP_PRFX $INSTALLER/system/app/$APP1/$APP1.apk $UNIFY$SYSTEM/$APP1PATH/$APP1.apk$CP_SFFX
-  $CP_PRFX $INSTALLER/system/app/$APP2/$APP2.apk $UNIFY$SYSTEM/$APP2PATH/$APP2.apk$CP_SFFX
+  $CP_PRFX $INSTALLER/system/app/$APP1/$APP1.apk $UNITY$SYSTEM/$APP1PATH/$APP1.apk$CP_SFFX
+  $CP_PRFX $INSTALLER/system/app/$APP2/$APP2.apk $UNITY$SYSTEM/$APP2PATH/$APP2.apk$CP_SFFX
 
   # INSTALL LIBRARIES
   ui_print "   Installing libraries..."
-  $CP_PRFX $INSTALLER/system/etc/dolby/dax-default.xml $UNIFY$SYSTEM/etc/dolby/dax-default.xml$CP_SFFX
-  $CP_PRFX $INSTALLER/system/lib/libdlbdapstorage.so $UNIFY$SYSTEM/lib/libdlbdapstorage.so$CP_SFFX
-  $CP_PRFX $INSTALLER/system/lib/soundfx/libswdax.so $UNIFY$SYSTEM/lib/soundfx/libswdax.so$CP_SFFX
+  $CP_PRFX $INSTALLER/system/etc/dolby/dax-default.xml $UNITY$SYSTEM/etc/dolby/dax-default.xml$CP_SFFX
+  $CP_PRFX $INSTALLER/system/lib/libdlbdapstorage.so $UNITY$SYSTEM/lib/libdlbdapstorage.so$CP_SFFX
+  $CP_PRFX $INSTALLER/system/lib/soundfx/libswdax.so $UNITY$SYSTEM/lib/soundfx/libswdax.so$CP_SFFX
 
   if [ "$DOLBY" == aquax5 ] || [ "$DOLBY" == axon7 ] || [ "$DOLBY" == lemax2 ] || [ "$DOLBY" == lepro3 ]; then
-    $CP_PRFX $INSTALLER/system/lib/libhwdaphal.so $UNIFY$SYSTEM/lib/libhwdaphal.so$CP_SFFX
-    $CP_PRFX $INSTALLER/system/lib/libstagefright_soft_ddpdec.so $UNIFY$SYSTEM/lib/libstagefright_soft_ddpdec.so$CP_SFFX
+    $CP_PRFX $INSTALLER/system/lib/libhwdaphal.so $UNITY$SYSTEM/lib/libhwdaphal.so$CP_SFFX
+    $CP_PRFX $INSTALLER/system/lib/libstagefright_soft_ddpdec.so $UNITY$SYSTEM/lib/libstagefright_soft_ddpdec.so$CP_SFFX
   fi
 
   if [ "$DOLBY" == axon7 ]; then
-    $CP_PRFX $INSTALLER/system/lib/soundfx/libhwdax.so $UNIFY$SYSTEM/lib/soundfx/libhwdax.so$CP_SFFX
+    $CP_PRFX $INSTALLER/system/lib/soundfx/libhwdax.so $UNITY$SYSTEM/lib/soundfx/libhwdax.so$CP_SFFX
   fi
 
-  if [ -d $SYSTEM/lib64 ]; then
+  if [ -d "$IS64BIT" == true ]; then
     if [ "$DOLBY" == axon7 ] || [ "$DOLBY" == lemax2 ] || [ "$DOLBY" == lepro3 ]; then
-      $CP_PRFX $INSTALLER/system/lib64/libhwdaphal.so $UNIFY$SYSTEM/lib64/libhwdaphal.so$CP_SFFX
+      $CP_PRFX $INSTALLER/system/lib64/libhwdaphal.so $UNITY$SYSTEM/lib64/libhwdaphal.so$CP_SFFX
     fi
   fi
 
+  # INSTALL SCRIPTS
   if [ "$MAGISK" == false ]; then
-    #INSTALL SCRIPTS
-    if [ "$supersuimg" ] || [ -d /su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ] || [ -d $SYSTEM/etc/init.d ]; then
-      if [ "$supersuimg" ] || [ -d /su ]; then
-        ui_print "   Installing scripts for systemless SuperSU..."
-        EXT=".sh"
-        EXTRDIR=/su/su.d
-        NEW=/su/bin/supolicy
-      elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
-        ui_print "   Installing scripts for system SuperSU..."
-        EXTRDIR=$SYSTEM/su.d
-        EXT=".sh"
-        NEW=$SYSTEM/xbin/supolicy
-      elif [ -d $SYSTEM/etc/init.d ]; then
-        ui_print "   Installing scripts for non root..."
-        EXT=""
-        EXTRDIR=$SYSTEM/etc/init.d
-        NEW=$SYSTEM/xbin/supolicy
-      fi
-    ui_print "    Installing universal audio tweaks script..."
-    ui_print "    Installing $MODID specific script..."
-    sed -i "s%/system/xbin/supolicy%$NEW%g" $SYSTEM/su.d/50audiotweaks.sh
-    sys_mk_ch $EXTRDIR 0755
-    sys_cp_ch $INSTALLER/system/su.d/50audiotweaks.sh $EXTRDIR/50audiotweaks$EXT 0644
-    sys_cp_ch $INSTALLER/system/su.d/50$MODID.sh $EXTRDIR/50$MODID$EXT 0644
-    else
-      ui_print "   No script support detected..."
+    if [ "$supersuimg" ] || [ -d /su ]; then
+      ui_print "   Installing scripts for systemless SuperSU..."
+    elif [ -d $SYSTEM/su ] || [ -f $SYSTEM/xbin/daemonsu ] || [ -f $SYSTEM/xbin/su ] || [ -f $SYSTEM/xbin/sugote ]; then
+      ui_print "   Installing scripts for system SuperSU..."
+    elif [ -d $SYSTEM/etc/init.d ]; then
+      ui_print "   Installing scripts for non root..."
     fi
+    sys_cp_ch $INSTALLER/common/$AUDMODLIBID-post-fs-data.sh $SH/$AUDMODLIBID$EXT 0644
 
     # INSTALL ROM BACKUP SCRIPT
     if [ -d $SYSTEM/addon.d ]; then
       ui_print "   Installing addon.d backup script..."
-      sys_cp_ch $INSTALLER/system/addon.d/99$MODID.sh $SYSTEM/addon.d/99$MODID.sh 0644
+      sys_cp_ch $INSTALLER/system/addon.d/$MODID.sh $SYSTEM/addon.d/$MODID.sh 0644
     fi
   fi
   #### ^ INSERT YOUR FILE INSTALL ^ ####
@@ -471,75 +471,75 @@ magisk_audmodlib() {
   ui_print " "
   ui_print "- Installing Audio Modification Library -"
 
+  ui_print "   Installing scripts for MagiskSU..."
   mkdir -p $MOUNTPATH/.core/post-fs-data.d
-  cp -af $INSTALLER/common/$AUDMODLIBID.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh  
-
-  mkdir -p $MOUNTPATH/.core/post-fs-data.d
-  cp -af $INSTALLER/common/$MODID.sh $MOUNTPATH/.core/post-fs-data.d/$MODID.sh
+  cp -af $INSTALLER/common/$AUDMODLIBID-post-fs-data.sh $MOUNTPATH/.core/post-fs-data.d/$AUDMODLIBID.sh
+  mkdir -p $MOUNTPATH/.core/service.d
+  cp -af $INSTALLER/common/$AUDMODLIBID-service.sh $MOUNTPATH/.core/service.d/$AUDMODLIBID.sh
+  cp -af $INSTALLER/common/$MODID-service.sh $MOUNTPATH/.core/service.d/$MODID.sh
 
   if [ -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
     rm -rf /cache/magisk/audmodlib
   fi
 
   if [ ! -d /cache/magisk/audmodlib ] && [[ ! -d $AUDMODLIBPATH || ! -d /magisk/audmodlib ]]; then
-    TMPAUDMODLIBDIR=""
+    SOURCEDIR=""
+  elif [ -d /cache/magisk/audmodlib ]; then
+    SOURCEDIR=/cache/magisk/audmodlib
   elif [ -d $AUDMODLIBPATH ]; then
-    TMPAUDMODLIBDIR=$AUDMODLIBPATH
+    SOURCEDIR=$AUDMODLIBPATH
   elif [ -d /magisk/audmodlib ]; then
-    TMPAUDMODLIBDIR=/magisk/audmodlib
+    SOURCEDIR=/magisk/audmodlib
   fi
-  
+
   magisk_install
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       mkdir -p /cache/magisk/audmodlib${CFG%/*}
-	fi
-  done
-
-  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ ! -f $CFG.bak ]; then
-      cp -af $CFG /cache/magisk/audmodlib$CFG.bak
-    else
-	  cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
     fi
   done
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
-    if [ -f $CFG ]; then
-      cp -af $TMPAUDMODLIBDIR$CFG /cache/magisk/audmodlib$CFG
-	fi
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+    if [ ! -f $CFG.bak ]; then
+      cp -af $CFG /cache/magisk/audmodlib$CFG.bak
+    else
+      cp -af $CFG.bak /cache/magisk/audmodlib$CFG.bak
+    fi
   done
 
-  if [ -f $VENDOR_CONFIG ]; then
-    cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$VENDOR_CONFIG
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
+    if [ -f $CFG ]; then
+      cp -af $SOURCEDIR$CFG /cache/magisk/audmodlib$CFG
+    fi
+  done
+
+  if [ -f $V_CONFIG_FILE ]; then
+    cp -af /cache/magisk/audmodlib$CONFIG_FILE /cache/magisk/audmodlib$V_CONFIG_FILE
   fi
   
   set_perm_recursive  /cache/magisk/audmodlib  0  0  0755  0644
 
   mkdir -p $AUDMODLIBPATH
 
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       mkdir -p $AUDMODLIBPATH${CFG%/*}
-	fi
+    fi
   done
-
-  cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBPATH/module.prop
-  cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 
   unified_mod_patch
   
-  for CFG in $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG.bak $AUDMODLIBPATH$CFG.bak
-	fi
+    fi
   done
   
-  for CFG in $CONFIG_FILE $VENDOR_CONFIG $HTC_CONFIG_FILE $OTHER_VENDOR_FILE $OFFLOAD_CONFIG $AUD_POL $AUD_POL_CONF $AUD_OUT_POL $V_AUD_POL; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE $A2DP_AUD_POL $AUD_POL $AUD_POL_CONF $AUD_POL_VOL $SUB_AUD_POL $USB_AUD_POL $V_AUD_OUT_POL $V_AUD_POL $MIX_PATH $MIX_PATH_TASH $STRIGG_MIX_PATH $STRIGG_MIX_PATH_9330 $V_MIX_PATH; do
     if [ -f $CFG ]; then
       cp -af /cache/magisk/audmodlib$CFG $AUDMODLIBPATH$CFG
-	fi
+    fi
   done
   
   set_perm_recursive  $AUDMODLIBPATH  0  0  0755  0644
@@ -561,47 +561,47 @@ unified_mod_patch() {
   #### v INSERT YOUR FILE PATCHES v ####
   # REMOVE LIBRARIES & EFFECTS
   ui_print "    Removing library & effect lines..."
-  for CFG in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_VENDOR_FILE $HTC_CONFIG_FILE $VENDOR_CONFIG; do
+  for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
     if [ -f $CFG ]; then
       # REMOVE EFFECTS
-      sed -i 'H;1h;$!d;x; s/[[:blank:]]*dax {[^{}]*\({[^}]*}[^{}]*\)*}[[:blank:]]*\n//g' $PATCH$CFG
+      sed -i 'H;1h;$!d;x; s/[[:blank:]]*dax {[^{}]*\({[^}]*}[^{}]*\)*}[[:blank:]]*\n//g' $UNITYPATCH$CFG
       # REMOVE LIBRARIES
-      sed -i '/dax {/,/}/d' $PATCH$CFG
-      sed -i '/dax_sw {/,/}/d' $PATCH$CFG
-      sed -i '/dax_hw {/,/}/d' $PATCH$CFG
+      sed -i '/dax {/,/}/d' $UNITYPATCH$CFG
+      sed -i '/dax_sw {/,/}/d' $UNITYPATCH$CFG
+      sed -i '/dax_hw {/,/}/d' $UNITYPATCH$CFG
     fi
   done
 
-  # ADD LIBRARIES & EFFECTS
   ui_print "    Patching existing audio_effects files..."
+
+  # ADD LIBRARIES & EFFECTS
   if [ "$DOLBY" == a7000-6.5 ] || [ "$DOLBY" == aquax5 ] || [ "$DOLBY" == lemax2 ] || [ "$DOLBY" == lepro3 ]; then
-    for CFG in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_VENDOR_FILE $HTC_CONFIG_FILE $VENDOR_CONFIG; do
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
       if [ -f $CFG ]; then
-	    # ADD EFFECTS
-        sed -i 's/^effects {/effects {\n  dax {\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  }/g' $PATCH$CFG
+        # ADD EFFECTS
+        sed -i 's/^effects {/effects {\n  dax {\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  }/g' $UNITYPATCH$CFG
         # ADD LIBRARIES
-        sed -i 's/^libraries {/libraries {\n  dax {\n    path \/system\/lib\/soundfx\/libswdax.so\n  }/g' $PATCH$CFG
+        sed -i 's/^libraries {/libraries {\n  dax {\n    path \/system\/lib\/soundfx\/libswdax.so\n  }/g' $UNITYPATCH$CFG
       fi
     done
   fi
 
   if [ "$DOLBY" == axon7 ]; then
-  ui_print "    Patching existing audio_effects files..."
-    for CFG in $CONFIG_FILE $OFFLOAD_CONFIG $OTHER_VENDOR_FILE $HTC_CONFIG_FILE $VENDOR_CONFIG; do
+    for CFG in $CONFIG_FILE $HTC_CONFIG_FILE $OTHER_V_FILE $OFFLOAD_CONFIG $V_CONFIG_FILE; do
       if [ -f $CFG ]; then
         # ADD EFFECTS
-        sed -i 's/^effects {/effects {\n  dax {\n    library proxy\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n\n    libsw {\n      library dax_sw\n      uuid 6ab06da4-c516-4611-8166-6168726e6f69\n    }\n\n    libhw {\n      library dax_hw\n      uuid a0c30891-8246-4aef-b8ad-696f6e726861\n    }\n  }/g' $PATCH$CFG
+        sed -i 's/^effects {/effects {\n  dax {\n    library proxy\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n\n    libsw {\n      library dax_sw\n      uuid 6ab06da4-c516-4611-8166-6168726e6f69\n    }\n\n    libhw {\n      library dax_hw\n      uuid a0c30891-8246-4aef-b8ad-696f6e726861\n    }\n  }/g' $UNITYPATCH$CFG
         # ADD LIBRARIES
-        sed -i 's/^libraries {/libraries {\n  dax_sw {\n    path \/system\/lib\/soundfx\/libswdax.so\n  }/g' $PATCH$CFG
-        sed -i 's/^libraries {/libraries {\n  dax_hw {\n    path \/system\/lib\/soundfx\/libhwdax.so\n  }/g' $PATCH$CFG
+        sed -i 's/^libraries {/libraries {\n  dax_sw {\n    path \/system\/lib\/soundfx\/libswdax.so\n  }/g' $UNITYPATCH$CFG
+        sed -i 's/^libraries {/libraries {\n  dax_hw {\n    path \/system\/lib\/soundfx\/libhwdax.so\n  }/g' $UNITYPATCH$CFG
       fi
     done
   fi
 
   if [ "$MAGISK" == false ]; then
     # COPY OVER MAIN AUDIO_EFFECTS CFG FILE TO VENDOR FILE
-    if [ -f $VENDOR_CONFIG ]; then
-      cp -af $CONFIG_FILE $VENDOR_CONFIG
+    if [ -f $V_CONFIG_FILE ]; then
+      cp -af $CONFIG_FILE $V_CONFIG_FILE
     fi
   fi
   #### ^ INSERT YOUR FILE PATCHES ^ ####
@@ -674,12 +674,8 @@ ui_print "- Mounting filesystems -"
 
 ui_print "   Mounting /cache..."
 mount /cache 2>/dev/null
-mount -o rw,remount /cache 2>/dev/null
-mount -o rw,remount /cache /cache 2>/dev/null
 ui_print "   Mounting /data..."
 mount /data 2>/dev/null
-mount -o rw,remount /data 2>/dev/null
-mount -o rw,remount /data /data 2>/dev/null
 
 if [ "$supersuimg" ]; then
   if [ "$(supersu_is_mounted /su)" == 0 ]; then
@@ -689,30 +685,31 @@ if [ "$supersuimg" ]; then
     for i in 0 1 2 3 4 5 6 7; do
       test "$(supersu_is_mounted /su)" == 1 && break;
       loop=/dev/block/loop$i;
-	  mknod $loop b 7 $i;
-	  losetup $loop $supersuimg;
-	  mount -t ext4 -o loop $loop /su; 2>/dev/null
+      mknod $loop b 7 $i;
+      losetup $loop $supersuimg;
+      mount -t ext4 -o loop $loop /su; 2>/dev/null
     done;
   fi;
 fi;
 
-if [ -f /data/magisk.img ] || [ -d /magisk ]; then
+SPACE=" "
+if [ $isABDevice == true ]; then
+  ui_print "   ! A/B OTA device detected!"
+  WRITE=rw
+  SPACE="  "
+elif [ -f /data/magisk.img ] || [ -d /magisk ]; then
   WRITE=ro
-else
+elif [ ! -f /data/magisk.img ] || [ ! -d /magisk ]; then
   WRITE=rw
 fi
 
-ui_print "   Mounting $SYSTEM($WRITE)..."
-mount -o $WRITE $SYSTEM 2>/dev/null
-mount -o $WRITE,remount $SYSTEM 2>/dev/null
-mount -o $WRITE,remount $SYSTEM $SYSTEM 2>/dev/null
-ui_print "   Mounting $VENDOR($WRITE)..."
-mount -o $WRITE $VENDOR 2>/dev/null
-mount -o $WRITE,remount $VENDOR 2>/dev/null
-mount -o $WRITE,remount $VENDOR $VENDOR 2>/dev/null
+ui_print "$SPACE  Mounting /system($WRITE)..."
+mount -o $WRITE /system 2>/dev/null
+ui_print "$SPACE  Mounting /vendor($WRITE)..."
+mount -o $WRITE /vendor 2>/dev/null
 
 if [ ! -f "$SYSTEM/build.prop" ]; then
-  ui_print "   ! Failed: $SYSTEM could not be mounted!"
+  ui_print "   ! Failed: /system could not be mounted!"
   exit 1
 fi
 
@@ -739,9 +736,9 @@ if is_mounted /data; then
     ui_print "   ! Magisk is not installed!"
     ui_print "    ! Installing on system!"
     # Wipe files
-    system_mod_wipe
+    unified_mod_wipe
     # Install
-	system_install
+    system_install
     # Create mod paths
     unified_mod_directory
     # Copy files
@@ -753,8 +750,8 @@ if is_mounted /data; then
     ui_print "    --------- INSTALLATION SUCCESSFUL ---------"
     ui_print " "
     ui_print "Installer brought to you by ahrion @ XDA"
-	ui_print " "
-	exit 0;
+    ui_print " "
+    exit 0;
   fi
 else
   IMG=/cache/magisk.img
@@ -791,6 +788,9 @@ if ! is_mounted $MOUNTPATH; then
   exit 1
 fi
 
+# Wipe files
+unified_mod_wipe
+
 # Prepare install
 magisk_install
 
@@ -822,7 +822,7 @@ fi
 
 # Module info
 cp -af $INSTALLER/module.prop $MODPATH/module.prop
-cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBMODPATH/module.prop
+cp -af $INSTALLER/common/audmodlibmodule.prop $AUDMODLIBPATH/module.prop
 if $BOOTMODE; then
   # Update info for Magisk Manager
   mktouch /magisk/$MODID/update
@@ -839,7 +839,6 @@ fi
 # service mode scripts
 if $LATESTARTSERVICE; then
   cp -af $INSTALLER/common/service.sh $MODPATH/service.sh
-  cp -af $INSTALLER/common/audmodlibservice.sh $AUDMODLIBPATH/service.sh
 fi
 
 #### COMPLETING INSTALL ####
@@ -862,12 +861,20 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
   resize2fs $IMG ${NEWDATASIZE}M
 fi
 
+umount /cache 2>/dev/null
+umount /data 2>/dev/null
+
 if ! $BOOTMODE; then
   if [ "$supersuimg" ] || [ -d /su ]; then
     umount /su
   fi
-  umount $SYSTEM
-  umount $VENDOR 2>/dev/null
+  umount /system
+  umount /vendor 2>/dev/null
+fi
+
+if [ $isABDevice == true ]; then
+  mount -o ro /system 2>/dev/null
+  mount -o ro /vendor 2>/dev/null
 fi
 
 ui_print " "
