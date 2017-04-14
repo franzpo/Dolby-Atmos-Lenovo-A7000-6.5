@@ -27,7 +27,7 @@
 
 # This will be the folder name under /magisk
 # This should also be the same as the id in your module.prop to prevent confusion
-MODID=udbr
+MODID=dax
 AUDMODLIBID=audmodlib
 
 # Set to true if you need to enable Magic Mount
@@ -52,9 +52,9 @@ LATESTARTSERVICE=false
 print_modname() {
   ui_print " "
   ui_print "      ****************************************"
-  ui_print "      *    Universal deep_buffer Remover     *"
+  ui_print "      *   Lenovo A7000 [6.5] Dolby Atmos®    *"
   ui_print "      ****************************************"
-  ui_print "      *         Universal - Patcher          *"
+  ui_print "      *           Universal - Mod            *"
   ui_print "      *             Version 2.4              *"
   ui_print "      *              by ahrion               *"
   ui_print "      ****************************************"
