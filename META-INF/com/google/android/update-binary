@@ -382,7 +382,7 @@ unified_mod_directory() {
   $MK_PRFX $UNITY$SYSTEM/etc/dolby$MK_SFFX
   $MK_PRFX $UNITY$SYSTEM/lib/soundfx$MK_SFFX
 
-  if [ -d "$IS64BIT" == true ]; then
+  if [ "$IS64BIT" == true ]; then
     if [ "$DOLBY" == "axon7" ] || [ "$DOLBY" == lemax2 ] || [ "$DOLBY" == lepro3 ]; then
       $MK_PRFX $UNITY$SYSTEM/lib64$MK_SFFX
     fi
@@ -435,7 +435,7 @@ unified_mod_copy() {
     $CP_PRFX $INSTALLER/system/lib/soundfx/libhwdax.so $UNITY$SYSTEM/lib/soundfx/libhwdax.so$CP_SFFX
   fi
 
-  if [ -d "$IS64BIT" == true ]; then
+  if [ "$IS64BIT" == true ]; then
     if [ "$DOLBY" == axon7 ] || [ "$DOLBY" == lemax2 ] || [ "$DOLBY" == lepro3 ]; then
       $CP_PRFX $INSTALLER/system/lib64/libhwdaphal.so $UNITY$SYSTEM/lib64/libhwdaphal.so$CP_SFFX
     fi
@@ -860,9 +860,6 @@ if [ "$curSizeM" -gt "$NEWDATASIZE" ]; then
   ui_print "   Shrinking $IMG to ${NEWDATASIZE}M..."
   resize2fs $IMG ${NEWDATASIZE}M
 fi
-
-umount /cache 2>/dev/null
-umount /data 2>/dev/null
 
 if ! $BOOTMODE; then
   if [ "$supersuimg" ] || [ -d /su ]; then
