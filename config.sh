@@ -1,10 +1,8 @@
 ##########################################################################################
 #
-# Magisk
+# Magisk Module Template Config Script
 # by topjohnwu
 # 
-# This is a template zip for developers
-#
 ##########################################################################################
 ##########################################################################################
 # 
@@ -25,23 +23,12 @@
 
 # NOTE: This part has to be adjusted to fit your own needs
 
-# This will be the folder name under /magisk
-# This should also be the same as the id in your module.prop to prevent confusion
-MODID=dax
-AUDMODLIBID=audmodlib
-
 # Set to true if you need to enable Magic Mount
 # Most mods would like it to be enabled
 AUTOMOUNT=true
 
-# Set to true if you need to load system.prop
-PROPFILE=false
-
 # Set to true if you need post-fs-data script
 POSTFSDATA=false
-
-# Set to true if you need late_start service script
-LATESTARTSERVICE=false
 
 ##########################################################################################
 # Installation Message
@@ -51,13 +38,13 @@ LATESTARTSERVICE=false
 
 print_modname() {
   ui_print " "
-  ui_print "      ****************************************"
-  ui_print "      *   Lenovo A7000 [6.5] Dolby Atmos®    *"
-  ui_print "      ****************************************"
-  ui_print "      *           Universal - Mod            *"
-  ui_print "      *             Version 2.4              *"
-  ui_print "      *              by ahrion               *"
-  ui_print "      ****************************************"
+  ui_print "    *******************************************"
+  ui_print "    *<name>*"
+  ui_print "    *******************************************"
+  ui_print "    *             Universal - Mod             *"
+  ui_print "    *<version>*"
+  ui_print "    *<author>*"
+  ui_print "    *******************************************"
   ui_print " "
 }
 
@@ -82,6 +69,7 @@ REPLACE="
 # !DO NOT! remove this if you don't need to replace anything, leave it empty as it is now
 REPLACE="
 "
+
 ##########################################################################################
 # Permissions
 ##########################################################################################
@@ -89,19 +77,20 @@ REPLACE="
 # NOTE: This part has to be adjusted to fit your own needs
 
 set_permissions() {
-  # Default permissions, don't remove them
-  set_perm_recursive  $MODPATH  0  0  0755  0644
-
-  # Only some special files require specific permissions
-  # The default permissions should be good enough for most cases
-
+  # DEFAULT PERMISSIONS, DON'T REMOVE THEM 
+  test "$MAGISK" == "true" && set_perm_recursive $MODPATH 0 0 0755 0644 
+ 
+  # CUSTOM PERMISSIONS
+  
   # Some templates if you have no idea what to do:
+  # Note that all files/folders have the $UNITY prefix - keep this prefix on all of your files/folders
+  # Also note the lack of '/' between variables - preceding slashes are already included in the variables
+  # Use $SYS for system and $VEN for vendor (Do not use $SYS$VEN, the $VEN is set to proper vendor path already - could be /vendor, /system/vendor, etc.)
 
   # set_perm_recursive  <dirname>                <owner> <group> <dirpermission> <filepermission> <contexts> (default: u:object_r:system_file:s0)
-  # set_perm_recursive  $MODPATH/system/lib       0       0       0755            0644
+  # set_perm_recursive $UNITY$SYS/lib 0 0 0755 0644
+  # set_perm_recursive $UNITY$VEN/lib/soundfx 0 0 0755 0644
 
   # set_perm  <filename>                         <owner> <group> <permission> <contexts> (default: u:object_r:system_file:s0)
-  # set_perm  $MODPATH/system/bin/app_process32   0       2000    0755         u:object_r:zygote_exec:s0
-  # set_perm  $MODPATH/system/bin/dex2oat         0       2000    0755         u:object_r:dex2oat_exec:s0
-  # set_perm  $MODPATH/system/lib/libart.so       0       0       0644
+  # set_perm $UNITY$SYS/lib/libart.so 0 0 0644
 }
