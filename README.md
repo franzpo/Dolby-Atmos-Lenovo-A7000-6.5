@@ -5,7 +5,7 @@ This module enables Lenovo A7000 [6.5] Dolby Atmos Classic port and is the most 
 * [Audio Modification Library](https://forum.xda-developers.com/apps/magisk/module-audio-modification-library-t3579612) @ XDA Developers
 
 ## Compatibility
-* Android Jellybean+
+* Android Jellybean-Nougat
 * init.d (other root & rootless) - requires init.d support. If you don't have init.d support, try [Init.d Injector](https://forum.xda-developers.com/android/software-hacking/mod-universal-init-d-injector-wip-t3692105)
 * MagiskSU & SuperSU
 * Magisk & System install
