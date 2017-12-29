@@ -14,6 +14,9 @@ This module enables Lenovo A7000 [6.5] Dolby Atmos Classic port and is the most 
 * Works with [AM3D Zirene Sound](https://forum.xda-developers.com/android/apps-games/mod-zirene-sound-am3d-t3396698/post71580634#post71580634), [ViPER4AndroidFX](https://forum.xda-developers.com/apps/magisk/module-viper4android-fx-2-5-0-5-t3577058), & ViPER4AndroidXHiFi
 
 ## Change Log
+### v3.8 - 12.29.2017
+* Updated to Unity/AML 2.8
+
 ### v3.7 - 12.26.2017
 * Updated to Unity/AML 2.7
 

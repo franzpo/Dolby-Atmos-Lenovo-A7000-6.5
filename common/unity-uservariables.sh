@@ -7,3 +7,10 @@ MAXAPI=25
 AUDMODLIB=true
 DOLBY="a7000-6.5"
 MODID=dax
+
+# Temp fix for oos oreo devices
+if $OREONEW && [ "$(grep_prop ro.product.brand)" == "OnePlus" ]; then
+  ui_print "   ! Oneplus Oreo device detected !"
+  ui_print "   Setting selinux to permissive..."
+  echo "setenforce 0" > $INSTALLER/common/post-fs-data.sh
+fi
