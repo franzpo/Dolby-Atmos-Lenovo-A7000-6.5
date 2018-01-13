@@ -1,11 +1,11 @@
-# LeEco Le Pro 3 Dolby Atmos
-This module enables LeEco Le Pro 3 Dolby Atmos port and is the second most compatible of all the ports. [More details in support thread](https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342).
+# Lenovo A7000 [6.5] Dolby Atmos Classic
+This module enables Lenovo A7000 [6.5] Dolby Atmos Classic port and is the most compatible of all the ports. [More details in support thread](https://forum.xda-developers.com/android/software/soundmod-axon-7-dolby-atmos-t3412342).
 
 ### Dependencies
 * [Audio Modification Library](https://forum.xda-developers.com/apps/magisk/module-audio-modification-library-t3579612) @ XDA Developers
 
 ## Compatibility
-* Android Marshmallow-Nougat
+* Android Jellybean-Nougat
 * init.d (other root & rootless) - requires init.d support. If you don't have init.d support, try [Init.d Injector](https://forum.xda-developers.com/android/software-hacking/mod-universal-init-d-injector-wip-t3692105)
 * MagiskSU & SuperSU
 * Magisk & System install
@@ -93,8 +93,9 @@ This module enables LeEco Le Pro 3 Dolby Atmos port and is the second most compa
 
 ## Credits
 * [Dolby Laboratories](https://www.dolby.com/us/en/brands/dolby-atmos.html)
-* [LeEco](http://www.leeco.com/us/)
+* [Lenovo](http://www3.lenovo.com/ae/en/smart-devices/c/Smart-devices)
+* [worstenbrood](https://forum.xda-developers.com/member.php?u=981278) @ XDA Developers
 
 ## Source Code
-* Module [GitHub](https://github.com/therealahrion/Dolby-Atmos-LeEco-Le-Pro-)
+* Module [GitHub](https://github.com/therealahrion/Dolby-Atmos-Lenovo-A7000-6.5)
 * Collective Dolby Atmos Ports [GitHub](https://github.com/therealahrion/Collective-Dolby-Atmos-Ports)
