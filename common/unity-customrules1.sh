@@ -4,8 +4,8 @@ TIMEOFEXEC=1
 if $OREONEW && [ "$(grep_prop ro.product.brand)" == "OnePlus" ]; then
   ui_print "   ! Oneplus Oreo device detected !"
   ui_print "   Setting selinux to permissive..."
-  echo "$SHEBANG" > $INSTALLER/common/post-fs-data.sh
-  echo "setenforce 0" >> $INSTALLER/common/post-fs-data.sh
+  if $MAGISK; then echo "#!/system/bin/sh" > $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh; else echo "$SHEBANG" > $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh; fi
+  echo "setenforce 0" >> $INSTALLER/common/unity-audmodlib/$MODID-post-fs-data.sh
 fi
 
 if [ "$DOLBY" != axon7 ] && [ "$DOLBY" != a7000-6.5 ]; then
