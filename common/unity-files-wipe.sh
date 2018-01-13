@@ -1,0 +1,16 @@
+FOL/data/app/com.atmos-1
+FOL/data/app/com.atmos-2
+FOL/data/app/com.atmos-3
+FOL/data/app/com.atmos.daxappUI-1
+FOL/data/app/com.atmos.daxappUI-2
+FOL/data/app/com.atmos.daxappUI-3
+FOL/data/app/com.audlabs.viperfx-1
+FOL/data/app/com.audlabs.viperfx-2
+FOL$SYS/etc/dolby
+APPAx
+APPAxUI
+$SYS/lib/libdlbdapstorage.so
+$SYS/lib/libhwdaphal.so
+$SYS/lib/soundfx/libswdax.so
+$SYS/lib/soundfx/libhwdax.so
+$SYS/lib64/libhwdaphal.so
