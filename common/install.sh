@@ -42,17 +42,16 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
 fi
 
 ui_print "   Patching existing audio_effects files..."
-# Create vendor audio_effects.conf if missing
-if [ -f $ORIGDIR/system/etc/audio_effects.conf ] && [ ! -f $ORIGDIR/system/vendor/etc/audio_effects.conf ] && [ ! -f $ORIGDIR/system/vendor/etc/audio_effects.xml ]; then
-  cp_ch_nb $ORIGDIR/system/etc/audio_effects.conf $UNITY/system/vendor/etc/audio_effects.conf
-  CFGS="${CFGS} /system/vendor/etc/audio_effects.conf"
-fi
 if [ "$DOLBY" == "AxAxon7" ]; then
   for FILE in ${CFGS}; do
-    $MAGISK && cp_ch $ORIGDIR$FILE $UNITY$FILE
+    if $MAGISK; then
+      cp_ch $ORIGDIR$FILE $UNITY$FILE
+    else
+      [ ! -f $ORIGDIR$FILE.bak ] && cp_ch $ORIGDIR$FILE $UNITY$FILE.bak
+    fi
     case $FILE in
-      *.conf) [ ! "$(grep '^ *# *music_helper {' $UNITY$FILE)" -a "$(grep '^ *music_helper {' $UNITY$FILE)" ] && sed -i "/effects {/,/^}/ {/music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
-              [ ! "$(grep '^ *# *sa3d {' $UNITY$FILE)" -a "$(grep '^ *sa3d {' $UNITY$FILE)" ] && sed -i "/effects {/,/^}/ {/sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
+      *.conf) sed -i "/effects {/,/^}/ {/^ *music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
+              sed -i "/effects {/,/^}/ {/^ *sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
               if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
                 if [ ! "$(grep '^ *proxy {' $UNITY$FILE)" ]; then
                   sed -i "s/^libraries {/libraries {\n  proxy { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libeffectproxy.so\n  } #$MODID/g" $UNITY$FILE
@@ -61,8 +60,8 @@ if [ "$DOLBY" == "AxAxon7" ]; then
                 sed -i "s/^libraries {/libraries {\n  dax_hw { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libhwdax.so\n  } #$MODID/g" $UNITY$FILE
                 sed -i "s/^libraries {/libraries {\n  dax_sw { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $UNITY$FILE
               fi;;
-      *.xml) [ ! "$(grep '^ *<\!--<effect name=\"music_helper\"*' $UNITY$FILE)" -a "$(grep '^ *<effect name=\"music_helper\"*' $UNITY$FILE)" ] && sed -i "s/^\( *\)<effect name=\"music_helper\"\(.*\)/\1<\!--<effect name=\"music_helper\"\2-->/" $UNITY$FILE
-             [ ! "$(grep '^ *<\!--<effect name=\"sa3d\"*' $UNITY$FILE)" -a "$(grep '^ *<effect name=\"sa3d\"*' $UNITY$FILE)" ] && sed -i "s/^\( *\)<effect name=\"sa3d\"\(.*\)/\1<\!--<effect name=\"sa3d\"\2-->/" $UNITY$FILE
+      *.xml) sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"music_helper\"\/>/\1<\!--<apply effect=\"music_helper\"\/>-->/}" $UNITY$FILE
+             sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"sa3d\"\/>/\1<\!--<apply effect=\"sa3d\"\/>-->/}" $UNITY$FILE
              if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
                if [ ! "$(grep "<library name=\"proxy\" path=\"libeffectproxy.so\"\/>" $UNITY$FILE)" ]; then
                  sed -i "/<libraries>/ a\        <library name=\"proxy\" path=\"libeffectproxy.so\"\/><!--$MODID-->" $UNITY$FILE
@@ -75,14 +74,18 @@ if [ "$DOLBY" == "AxAxon7" ]; then
   done
 else
   for FILE in ${CFGS}; do
-    $MAGISK && cp_ch $ORIGDIR$FILE $UNITY$FILE
+    if $MAGISK; then
+      cp_ch $ORIGDIR$FILE $UNITY$FILE
+    else
+      [ ! -f $ORIGDIR$FILE.bak ] && cp_ch $ORIGDIR$FILE $UNITY$FILE.bak
+    fi
     case $FILE in
-      *.conf) [ ! "$(grep '^ *# *music_helper {' $UNITY$FILE)" -a "$(grep '^ *music_helper {' $UNITY$FILE)" ] && sed -i "/effects {/,/^}/ {/music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
-              [ ! "$(grep '^ *# *sa3d {' $UNITY$FILE)" -a "$(grep '^ *sa3d {' $UNITY$FILE)" ] && sed -i "/effects {/,/^}/ {/sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
+      *.conf) sed -i "/effects {/,/^}/ {/^ *music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
+              sed -i "/effects {/,/^}/ {/^ *sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
               sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  } #$MODID/g" $UNITY$FILE
               sed -i "s/^libraries {/libraries {\n  dax { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $UNITY$FILE;;
-      *.xml) [ ! "$(grep '^ *<\!--<effect name=\"music_helper\"*' $UNITY$FILE)" -a "$(grep '^ *<effect name=\"music_helper\"*' $UNITY$FILE)" ] && sed -i "s/^\( *\)<effect name=\"music_helper\"\(.*\)/\1<\!--<effect name=\"music_helper\"\2-->/" $UNITY$FILE
-             [ ! "$(grep '^ *<\!--<effect name=\"sa3d\"*' $UNITY$FILE)" -a "$(grep '^ *<effect name=\"sa3d\"*' $UNITY$FILE)" ] && sed -i "s/^\( *\)<effect name=\"sa3d\"\(.*\)/\1<\!--<effect name=\"sa3d\"\2-->/" $UNITY$FILE
+      *.xml) sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"music_helper\"\/>/\1<\!--<apply effect=\"music_helper\"\/>-->/}" $UNITY$FILE
+             sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"sa3d\"\/>/\1<\!--<apply effect=\"sa3d\"\/>-->/}" $UNITY$FILE
              sed -i "/<libraries>/ a\        <library name=\"dax\" path=\"libswdax.so\"\/><!--$MODID-->" $UNITY$FILE
              sed -i "/<effects>/ a\        <effect name=\"dax\" library=\"dax\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"\/><!--$MODID-->" $UNITY$FILE;;
     esac  
