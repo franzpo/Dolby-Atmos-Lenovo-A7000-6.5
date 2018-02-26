@@ -9,12 +9,16 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
     *new*|*New*|*NEW*) NEW=true;;
   esac
 
+  # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
+  chmod 755 $INSTALLER/common/keycheck
+  FUNCTION=chooseport
+
   chooseport() {
     ui_print "   Choose which dolby ui you want installed:"
     ui_print "   Vol+ = new, Vol- = old"
     #note from chainfire @xda-developers: getevent behaves weird when piped, and busybox grep likes that even less than toolbox/toybox grep
     while (true); do
-      getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events
+      (getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || { FUNCTION=chooseportold; chooseportold; break; }
       if (`cat $INSTALLER/events 2>/dev/null | /system/bin/grep VOLUME >/dev/null`); then
         break
       fi
@@ -25,11 +29,29 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
       return 1
     fi
   }
+  
+  chooseportold() {
+    ui_print "   ! Legacy device detected!"
+    ui_print "   ! Restarting selection w/ old keycheck method"
+    ui_print " "
+    ui_print "   Enter selection again:"
+    $INSTALLER/common/keycheck
+    SEL=$?
+    shift
+    if [ $SEL -eq 42 ]; then
+      return 0
+    elif [ $SEL -eq 21 ]; then
+      return 1
+    else
+      ui_print "Vol key not detected! Defaulting to Vol Up! "
+      return 0
+    fi
+  }
 
   ui_print " "
   ui_print "- Select Version -"
   if ! $OLD && ! $NEW; then
-    chooseport && NEW=true
+    $FUNCTION && NEW=true
   else
     ui_print "   Dolby ui version specified in zipname!"
   fi
