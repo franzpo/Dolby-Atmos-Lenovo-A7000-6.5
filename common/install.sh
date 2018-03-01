@@ -11,14 +11,18 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
 
   # Keycheck binary by someone755 @Github, idea for code below by Zappo @xda-developers
   chmod 755 $INSTALLER/common/keycheck
-  FUNCTION=chooseport
 
+  keytest() {
+    ui_print "- Vol Key Test -"
+    ui_print "   Press Vol Up:"
+    (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || return 1
+    return 0
+  }   
+                                                                              
   chooseport() {
-    ui_print "   Choose which dolby ui you want installed:"
-    ui_print "   Vol+ = new, Vol- = old"
     #note from chainfire @xda-developers: getevent behaves weird when piped, and busybox grep likes that even less than toolbox/toybox grep
     while (true); do
-      (getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || { $BOOTMODE || { FUNCTION=chooseportold; chooseportold; break; }; }
+      /system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events
       if (`cat $INSTALLER/events 2>/dev/null | /system/bin/grep VOLUME >/dev/null`); then
         break
       fi
@@ -29,32 +33,56 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
       return 1
     fi
   }
-  
+
   chooseportold() {
-    ui_print "   ! Legacy device detected!"
-    ui_print "   ! Restarting selection w/ old keycheck method"
-    ui_print " "
-    ui_print "   Enter selection again:"
+    # Calling it first time detects previous input. Calling it second time will do what we want
+    $INSTALLER/common/keycheck
     $INSTALLER/common/keycheck
     SEL=$?
-    shift
-    if [ $SEL -eq 42 ]; then
+    if [ "$1" == "UP" ]; then
+      UP=$SEL
+    elif [ "$1" == "DOWN" ]; then
+      DOWN=$SEL
+    elif [ $SEL -eq $UP ]; then
       return 0
-    elif [ $SEL -eq 21 ]; then
+    elif [ $SEL -eq $DOWN ]; then
       return 1
     else
-      ui_print "Vol key not detected! Defaulting to Vol Up! "
-      return 0
+      ui_print "   Vol key not detected!"
+      abort "   Use name change method in TWRP"
     fi
   }
 
-  ui_print " "
-  ui_print "- Select Version -"
-  if ! $OLD && ! $NEW; then
-    $FUNCTION && NEW=true
-  else
-    ui_print "   Dolby ui version specified in zipname!"
+  if ! $NEW && ! $OLD; then
+    ui_print " "
+    if keytest; then
+      FUNCTION=chooseport
+    else
+      FUNCTION=chooseportold
+      ui_print "   ! Legacy device detected! Using old keycheck method"
+      ui_print " "
+      ui_print "- Vol Key Programming -"
+      ui_print "   Press Vol Up Again:"
+      $FUNCTION "UP"
+      ui_print "   Press Vol Down"
+      $FUNCTION "DOWN"
+    fi
+    ui_print " "
+    ui_print "- Select Version -"
+    ui_print "   Choose which dolby ui you want installed:"
+    ui_print "   Vol+ = new, Vol- = old"
+    if ! $OLD && ! $NEW && ! $MAT; then
+      ui_print "   Choose which dolby ui you want installed:"
+      ui_print "   Vol+ = new, Vol- = old"
+      if $FUNCTION; then 
+        NEW=true
+      else 
+        OLD=true
+      fi
+      ui_print  "   Dolby ui version specified in zipname!"
+    fi
   fi
+  
   if $NEW; then
     ui_print "   New ui will be installed"
     cp -f $INSTALLER/custom/AxUI.apk $INSTALLER/system/app/AxUI/AxUI.apk
