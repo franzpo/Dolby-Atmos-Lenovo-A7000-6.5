@@ -71,16 +71,13 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
     ui_print "- Select Version -"
     ui_print "   Choose which dolby ui you want installed:"
     ui_print "   Vol+ = new, Vol- = old"
-    if ! $OLD && ! $NEW && ! $MAT; then
-      ui_print "   Choose which dolby ui you want installed:"
-      ui_print "   Vol+ = new, Vol- = old"
-      if $FUNCTION; then 
-        NEW=true
-      else 
-        OLD=true
-      fi
-      ui_print  "   Dolby ui version specified in zipname!"
+    if $FUNCTION; then 
+      NEW=true
+    else 
+      OLD=true
     fi
+  else
+    ui_print  "   Dolby ui version specified in zipname!"
   fi
   
   if $NEW; then
@@ -94,11 +91,7 @@ fi
 ui_print "   Patching existing audio_effects files..."
 if [ "$DOLBY" == "AxAxon7" ]; then
   for FILE in ${CFGS}; do
-    if $MAGISK; then
-      cp_ch $ORIGDIR$FILE $UNITY$FILE
-    else
-      [ ! -f $ORIGDIR$FILE.bak ] && cp_ch $ORIGDIR$FILE $UNITY$FILE.bak
-    fi
+    cp_ch $ORIGDIR$FILE $UNITY$FILE
     case $FILE in
       *.conf) sed -i "/effects {/,/^}/ {/^ *music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
               sed -i "/effects {/,/^}/ {/^ *sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
@@ -124,11 +117,7 @@ if [ "$DOLBY" == "AxAxon7" ]; then
   done
 else
   for FILE in ${CFGS}; do
-    if $MAGISK; then
-      cp_ch $ORIGDIR$FILE $UNITY$FILE
-    else
-      [ ! -f $ORIGDIR$FILE.bak ] && cp_ch $ORIGDIR$FILE $UNITY$FILE.bak
-    fi
+    cp_ch $ORIGDIR$FILE $UNITY$FILE
     case $FILE in
       *.conf) sed -i "/effects {/,/^}/ {/^ *music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
               sed -i "/effects {/,/^}/ {/^ *sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
