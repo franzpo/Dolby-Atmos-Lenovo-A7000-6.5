@@ -7,6 +7,9 @@ This module enables Lenovo A7000 [6.5] Dolby Atmos Classic port and is the most 
 * All root solutions (requires init.d support if not using magisk or supersu. Try [Init.d Injector](https://forum.xda-developers.com/android/software-hacking/mod-universal-init-d-injector-wip-t3692105))
 
 ## Change Log
+### v1.5.4 - 3.18.2018
+* Unity v1.4 update
+
 ### v1.5.3 - 3.07.2018
 * Remove redundant code
 * Fix derp in vol key logic
