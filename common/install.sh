@@ -95,6 +95,8 @@ if [ "$DOLBY" == "AxAxon7" ]; then
     case $FILE in
       *.conf) sed -i "/effects {/,/^}/ {/^ *music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
               sed -i "/effects {/,/^}/ {/^ *sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
+              sed -i "/effects {/,/^}/ {/^ *soundalive {/,/^  }/ s/^/#/g}" $UNITY$FILE
+              sed -i "/effects {/,/^}/ {/^ *dha {/,/^  }/ s/^/#/g}" $UNITY$FILE
               if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
                 if [ ! "$(grep '^ *proxy {' $UNITY$FILE)" ]; then
                   sed -i "s/^libraries {/libraries {\n  proxy { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libeffectproxy.so\n  } #$MODID/g" $UNITY$FILE
@@ -105,6 +107,8 @@ if [ "$DOLBY" == "AxAxon7" ]; then
               fi;;
       *.xml) sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"music_helper\"\/>/\1<\!--<apply effect=\"music_helper\"\/>-->/}" $UNITY$FILE
              sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"sa3d\"\/>/\1<\!--<apply effect=\"sa3d\"\/>-->/}" $UNITY$FILE
+             sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"soundalive\"\/>/\1<\!--<apply effect=\"soundalive\"\/>-->/}" $UNITY$FILE
+             sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"dha\"\/>/\1<\!--<apply effect=\"dha\"\/>-->/}" $UNITY$FILE
              if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
                if [ ! "$(grep "<library name=\"proxy\" path=\"libeffectproxy.so\"\/>" $UNITY$FILE)" ]; then
                  sed -i "/<libraries>/ a\        <library name=\"proxy\" path=\"libeffectproxy.so\"\/><!--$MODID-->" $UNITY$FILE
@@ -121,10 +125,14 @@ else
     case $FILE in
       *.conf) sed -i "/effects {/,/^}/ {/^ *music_helper {/,/}/ s/^/#/g}" $UNITY$FILE
               sed -i "/effects {/,/^}/ {/^ *sa3d {/,/^  }/ s/^/#/g}" $UNITY$FILE
+              sed -i "/effects {/,/^}/ {/^ *soundalive {/,/^  }/ s/^/#/g}" $UNITY$FILE
+              sed -i "/effects {/,/^}/ {/^ *dha {/,/^  }/ s/^/#/g}" $UNITY$FILE
               sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  } #$MODID/g" $UNITY$FILE
               sed -i "s/^libraries {/libraries {\n  dax { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $UNITY$FILE;;
       *.xml) sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"music_helper\"\/>/\1<\!--<apply effect=\"music_helper\"\/>-->/}" $UNITY$FILE
              sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"sa3d\"\/>/\1<\!--<apply effect=\"sa3d\"\/>-->/}" $UNITY$FILE
+             sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"soundalive\"\/>/\1<\!--<apply effect=\"soundalive\"\/>-->/}" $UNITY$FILE
+             sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"dha\"\/>/\1<\!--<apply effect=\"dha\"\/>-->/}" $UNITY$FILE
              sed -i "/<libraries>/ a\        <library name=\"dax\" path=\"libswdax.so\"\/><!--$MODID-->" $UNITY$FILE
              sed -i "/<effects>/ a\        <effect name=\"dax\" library=\"dax\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"\/><!--$MODID-->" $UNITY$FILE;;
     esac  
