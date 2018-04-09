@@ -1,7 +1,15 @@
-ospeff_rem() {
-  case $2 in
-    *.conf) [ "$(sed -n "/^output_session_processing {/,/^}/ {/$1/p}" $2)" ] && sed -i "/effects {/,/^}/ {/^ *$1 {/,/}/ s/^/#/g}" $2;;
-    *.xml) sed -ri "/^ *<postprocess>$/,/<\/postprocess>/ {/<stream type=\"music\">/,/<\/stream>/ s/^( *)<apply effect=\"$1\"\/>/\1<\!--<apply effect=\"$1\"\/>-->/}" $2;;
+osp_detect() {
+  case $1 in
+    *.conf) SPACES=$(sed -n "/^output_session_processing {/,/^}/ {/^ *music {/p}" $1 | sed -r "s/( *).*/\1/")
+            EFFECTS=$(sed -n "/^output_session_processing {/,/^}/ {/^$SPACES\music {/,/^$SPACES}/p}" $1 | grep -E "^$SPACES +[A-Za-z]+" | sed -r "s/( *.*) .*/\1/g")
+            for EFFECT in ${EFFECTS}; do
+              SPACES=$(sed -n "/^effects {/,/^}/ {/^ *$EFFECT {/p}" $1 | sed -r "s/( *).*/\1/")
+              [ "$EFFECT" != "atmos" ] && sed -i "/^effects {/,/^}/ {/^$SPACES$EFFECT {/,/^$SPACES}/ s/^/#/g}" $1
+            done;;
+     *.xml) EFFECTS=$(sed -n "/^ *<postprocess>$/,/^ *<\/postprocess>$/ {/^ *<stream type=\"music\">$/,/^ *<\/stream>$/ {/<stream type=\"music\">\|<\/stream>/d; s/<apply effect=\"//g; s/\"\/>//g; p}}" $1)
+            for EFFECT in ${EFFECTS}; do
+              [ "$EFFECT" != "atmos" ] && sed -ri "s/^( *)<apply effect=\"$EFFECT\"\/>/\1<\!--<apply effect=\"$EFFECT\"\/>-->/" $1
+            done;;
   esac
 }
 
@@ -99,10 +107,7 @@ ui_print "   Patching existing audio_effects files..."
 if [ "$DOLBY" == "AxAxon7" ]; then
   for FILE in ${CFGS}; do
     cp_ch $ORIGDIR$FILE $UNITY$FILE
-    ospeff_rem "music_helper" $UNITY$FILE
-    ospeff_rem "sa3d" $UNITY$FILE
-    ospeff_rem "soundalive" $UNITY$FILE
-    ospeff_rem "dha" $UNITY$FILE
+    osp_detect $UNITY$FILE
     case $FILE in
       *.conf) if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
                 if [ ! "$(grep '^ *proxy {' $UNITY$FILE)" ]; then
@@ -125,10 +130,7 @@ if [ "$DOLBY" == "AxAxon7" ]; then
 else
   for FILE in ${CFGS}; do
     cp_ch $ORIGDIR$FILE $UNITY$FILE
-    ospeff_rem "music_helper" $UNITY$FILE
-    ospeff_rem "sa3d" $UNITY$FILE
-    ospeff_rem "soundalive" $UNITY$FILE
-    ospeff_rem "dha" $UNITY$FILE
+    osp_detect $UNITY$FILE
     case $FILE in
       *.conf) sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  } #$MODID/g" $UNITY$FILE
               sed -i "s/^libraries {/libraries {\n  dax { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $UNITY$FILE;;
