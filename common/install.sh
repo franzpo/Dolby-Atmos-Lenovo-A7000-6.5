@@ -105,37 +105,39 @@ fi
 
 ui_print "   Patching existing audio_effects files..."
 if [ "$DOLBY" == "AxAxon7" ]; then
-  for FILE in ${CFGS}; do
-    cp_ch $ORIGDIR$FILE $UNITY$FILE
-    osp_detect $UNITY$FILE
+  for OFILE in ${CFGS}; do
+    FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
+    cp_ch $ORIGDIR$OFILE $FILE
+    osp_detect $FILE
     case $FILE in
-      *.conf) if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
-                if [ ! "$(grep '^ *proxy {' $UNITY$FILE)" ]; then
-                  sed -i "s/^libraries {/libraries {\n  proxy { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libeffectproxy.so\n  } #$MODID/g" $UNITY$FILE
+      *.conf) if [ ! "$(grep "dax" $FILE)" ]; then
+                if [ ! "$(grep '^ *proxy {' $FILE)" ]; then
+                  sed -i "s/^libraries {/libraries {\n  proxy { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libeffectproxy.so\n  } #$MODID/g" $FILE
                 fi
-                sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library proxy\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n\n    libsw {\n      library dax_sw\n      uuid 6ab06da4-c516-4611-8166-6168726e6f69\n    }\n\n    libhw {\n      library dax_hw\n      uuid a0c30891-8246-4aef-b8ad-696f6e726861\n    }\n  } #$MODID/g" $UNITY$FILE
-                sed -i "s/^libraries {/libraries {\n  dax_hw { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libhwdax.so\n  } #$MODID/g" $UNITY$FILE
-                sed -i "s/^libraries {/libraries {\n  dax_sw { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $UNITY$FILE
+                sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library proxy\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n\n    libsw {\n      library dax_sw\n      uuid 6ab06da4-c516-4611-8166-6168726e6f69\n    }\n\n    libhw {\n      library dax_hw\n      uuid a0c30891-8246-4aef-b8ad-696f6e726861\n    }\n  } #$MODID/g" $FILE
+                sed -i "s/^libraries {/libraries {\n  dax_hw { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libhwdax.so\n  } #$MODID/g" $FILE
+                sed -i "s/^libraries {/libraries {\n  dax_sw { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $FILE
               fi;;
-      *.xml) if [ ! "$(grep "dax" $UNITY$FILE)" ]; then
-               if [ ! "$(grep "<library name=\"proxy\" path=\"libeffectproxy.so\"\/>" $UNITY$FILE)" ]; then
-                 sed -i "/<libraries>/ a\        <library name=\"proxy\" path=\"libeffectproxy.so\"\/><!--$MODID-->" $UNITY$FILE
+      *.xml) if [ ! "$(grep "dax" $FILE)" ]; then
+               if [ ! "$(grep "<library name=\"proxy\" path=\"libeffectproxy.so\"\/>" $FILE)" ]; then
+                 sed -i "/<libraries>/ a\        <library name=\"proxy\" path=\"libeffectproxy.so\"\/><!--$MODID-->" $FILE
                fi
-               sed -i "/<libraries>/ a\        <library name=\"dax_hw\" path=\"libhwdax.so\"\/><!--$MODID-->" $UNITY$FILE
-               sed -i "/<libraries>/ a\        <library name=\"dax_sw\" path=\"libswdax.so\"\/><!--$MODID-->" $UNITY$FILE        
-               sed -i -e "/<effects>/ a\        <effectProxy name=\"proxy\" library=\"proxy\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"><!--$MODID-->" -e "/<effects>/ a\            <libsw library=\"dax_sw\" uuid=\"6ab06da4-c516-4611-8166-6168726e6f69\"\/>" -e "/<effects>/ a\            <libhw library=\"dax_hw\" uuid=\"a0c30891-8246-4aef-b8ad-696f6e726861\"\/>" -e "/<effects>/ a\        <\/effectProxy><!--$MODID-->" $UNITY$FILE
+               sed -i "/<libraries>/ a\        <library name=\"dax_hw\" path=\"libhwdax.so\"\/><!--$MODID-->" $FILE
+               sed -i "/<libraries>/ a\        <library name=\"dax_sw\" path=\"libswdax.so\"\/><!--$MODID-->" $FILE        
+               sed -i -e "/<effects>/ a\        <effectProxy name=\"proxy\" library=\"proxy\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"><!--$MODID-->" -e "/<effects>/ a\            <libsw library=\"dax_sw\" uuid=\"6ab06da4-c516-4611-8166-6168726e6f69\"\/>" -e "/<effects>/ a\            <libhw library=\"dax_hw\" uuid=\"a0c30891-8246-4aef-b8ad-696f6e726861\"\/>" -e "/<effects>/ a\        <\/effectProxy><!--$MODID-->" $FILE
              fi;;
     esac   
   done
 else
-  for FILE in ${CFGS}; do
-    cp_ch $ORIGDIR$FILE $UNITY$FILE
-    osp_detect $UNITY$FILE
+  for OFILE in ${CFGS}; do
+    FILE="$UNITY$(echo $OFILE | sed "s|^/vendor|/system/vendor|g")"
+    cp_ch $ORIGDIR$OFILE $FILE
+    osp_detect $FILE
     case $FILE in
-      *.conf) sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  } #$MODID/g" $UNITY$FILE
-              sed -i "s/^libraries {/libraries {\n  dax { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $UNITY$FILE;;
-      *.xml) sed -i "/<libraries>/ a\        <library name=\"dax\" path=\"libswdax.so\"\/><!--$MODID-->" $UNITY$FILE
-             sed -i "/<effects>/ a\        <effect name=\"dax\" library=\"dax\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"\/><!--$MODID-->" $UNITY$FILE;;
+      *.conf) sed -i "s/^effects {/effects {\n  dax { #$MODID\n    library dax\n    uuid 9d4921da-8225-4f29-aefa-6e6f69726861\n  } #$MODID/g" $FILE
+              sed -i "s/^libraries {/libraries {\n  dax { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $FILE;;
+      *.xml) sed -i "/<libraries>/ a\        <library name=\"dax\" path=\"libswdax.so\"\/><!--$MODID-->" $FILE
+             sed -i "/<effects>/ a\        <effect name=\"dax\" library=\"dax\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"\/><!--$MODID-->" $FILE;;
     esac  
   done
 fi
