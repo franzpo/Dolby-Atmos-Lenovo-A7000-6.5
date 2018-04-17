@@ -13,6 +13,19 @@ osp_detect() {
   esac
 }
 
+# Tell user aml is needed if applicable
+if $MAGISK; then
+  if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
+  FILES=$(find $LOC -type f -name "*audio_effects*.conf" -o -name "*audio_effects*.xml")
+  if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
+    ui_print " "
+    ui_print "   ! Conflicting audio mod found!"
+    ui_print "   ! You will need to install !"
+    ui_print "   ! Audio Modification Library !"
+    sleep 3
+  fi
+fi
+
 rm -rf /data/app/com.atmos*
 
 # Choose between new and old ui if dolby port supports it
