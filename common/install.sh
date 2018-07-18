@@ -16,7 +16,7 @@ osp_detect() {
 # Tell user aml is needed if applicable
 if $MAGISK && ! $SYSOVERRIDE; then
   if $BOOTMODE; then LOC="/sbin/.core/img/*/system $MOUNTPATH/*/system"; else LOC="$MOUNTPATH/*/system"; fi
-  FILES=$(find $LOC -type f -name "*audio_effects*.conf" -o -name "*audio_effects*.xml")
+  FILES=$(find $LOC -type f -name "*audio_effects*.conf" -o -name "*audio_effects*.xml" 2>/dev/null)
   if [ ! -z "$FILES" ] && [ ! "$(echo $FILES | grep '/aml/')" ]; then
     ui_print " "
     ui_print "   ! Conflicting audio mod found!"
@@ -45,8 +45,8 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
     ui_print "   Press Vol Up:"
     (/system/bin/getevent -lc 1 2>&1 | /system/bin/grep VOLUME | /system/bin/grep " DOWN" > $INSTALLER/events) || return 1
     return 0
-  }   
-                                                                              
+  }
+
   chooseport() {
     #note from chainfire @xda-developers: getevent behaves weird when piped, and busybox grep likes that even less than toolbox/toybox grep
     while (true); do
@@ -99,15 +99,15 @@ if [ "$DOLBY" != "AxAxon7" ] && [ "$DOLBY" != "AxA7000-6.5" ]; then
     ui_print "- Select Version -"
     ui_print "   Choose which dolby ui you want installed:"
     ui_print "   Vol+ = new, Vol- = old"
-    if $FUNCTION; then 
+    if $FUNCTION; then
       NEW=true
-    else 
+    else
       OLD=true
     fi
   else
     ui_print  "   Dolby ui version specified in zipname!"
   fi
-  
+
   if $NEW; then
     ui_print "   New ui will be installed"
     cp -f $INSTALLER/custom/AxUI.apk $INSTALLER/system/app/AxUI/AxUI.apk
@@ -136,10 +136,10 @@ if [ "$DOLBY" == "AxAxon7" ]; then
                  sed -i "/<libraries>/ a\        <library name=\"proxy\" path=\"libeffectproxy.so\"\/><!--$MODID-->" $FILE
                fi
                sed -i "/<libraries>/ a\        <library name=\"dax_hw\" path=\"libhwdax.so\"\/><!--$MODID-->" $FILE
-               sed -i "/<libraries>/ a\        <library name=\"dax_sw\" path=\"libswdax.so\"\/><!--$MODID-->" $FILE        
+               sed -i "/<libraries>/ a\        <library name=\"dax_sw\" path=\"libswdax.so\"\/><!--$MODID-->" $FILE
                sed -i -e "/<effects>/ a\        <effectProxy name=\"proxy\" library=\"proxy\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"><!--$MODID-->" -e "/<effects>/ a\            <libsw library=\"dax_sw\" uuid=\"6ab06da4-c516-4611-8166-6168726e6f69\"\/>" -e "/<effects>/ a\            <libhw library=\"dax_hw\" uuid=\"a0c30891-8246-4aef-b8ad-696f6e726861\"\/>" -e "/<effects>/ a\        <\/effectProxy><!--$MODID-->" $FILE
              fi;;
-    esac   
+    esac
   done
 else
   for OFILE in ${CFGS}; do
@@ -151,6 +151,6 @@ else
               sed -i "s/^libraries {/libraries {\n  dax { #$MODID\n    path $LIBPATCH\/lib\/soundfx\/libswdax.so\n  } #$MODID/g" $FILE;;
       *.xml) sed -i "/<libraries>/ a\        <library name=\"dax\" path=\"libswdax.so\"\/><!--$MODID-->" $FILE
              sed -i "/<effects>/ a\        <effect name=\"dax\" library=\"dax\" uuid=\"9d4921da-8225-4f29-aefa-6e6f69726861\"\/><!--$MODID-->" $FILE;;
-    esac  
+    esac
   done
 fi
